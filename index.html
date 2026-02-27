@@ -1,0 +1,1846 @@
+﻿<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YouTube Ніші - Нотатки</title>
+  <style>
+    :root {
+      --bg-1: #020611;
+      --bg-2: #07122a;
+      --bg-3: #0b1833;
+      --card: #0f1f3b;
+      --card-soft: #13284a;
+      --text: #e8f0ff;
+      --muted: #a8b9d8;
+      --line: #2a3f64;
+      --accent: #3f8cff;
+      --accent-2: #2d72d5;
+      --shadow: 0 14px 34px rgba(1, 5, 16, 0.5);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Noto Sans", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .main-pane {
+      min-width: 0;
+    }
+
+    .left-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .site-head {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(10, 23, 48, 0.84);
+      box-shadow: var(--shadow);
+      padding: 12px;
+    }
+
+    .site-head h1 {
+      margin: 0 0 8px;
+    }
+
+    .site-head .hint {
+      margin: 0 0 10px;
+    }
+
+    .backup-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .backup-btn {
+      background: #1f355d;
+      color: #e8f0ff;
+      font-weight: 800;
+    }
+
+    .timer-pane {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(10, 23, 48, 0.84);
+      box-shadow: var(--shadow);
+      padding: 12px;
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+    }
+
+    .timer-pane h2 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .focus-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .focus-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #0f1f3b;
+      padding: 10px;
+      min-height: 112px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .focus-title {
+      margin: 0 0 6px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #e8f0ff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .focus-meta {
+      margin: 6px 0 0;
+      font-size: 0.8rem;
+      color: #9fb2d8;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 1.5rem;
+      letter-spacing: 0.2px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      background: #102346;
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .tab-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(9, 22, 44, 0.7);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 3px;
+    }
+
+    .tab-item.drag-before {
+      box-shadow: inset 3px 0 0 #8fc2ff;
+    }
+
+    .tab-item.drag-after {
+      box-shadow: inset -3px 0 0 #8fc2ff;
+    }
+
+    .tab-item .tab {
+      border: 0;
+      margin: 0;
+      background: transparent;
+    }
+
+    .tab-item .tab.active {
+      background: var(--accent);
+      border-radius: 9px;
+    }
+
+    .tab-mini {
+      padding: 6px 9px;
+      border-radius: 8px;
+      background: #1c345c;
+      color: #dbe9ff;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .tab-mini.danger {
+      background: #6a2631;
+      color: #ffe5ea;
+    }
+
+    .tab-add {
+      background: #24549a;
+      color: #eaf2ff;
+      font-weight: 800;
+    }
+
+    .tab-edit-toggle {
+      background: #1f355d;
+      color: #eaf2ff;
+      font-weight: 800;
+    }
+
+    .composer {
+      background: rgba(15, 31, 59, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(3px);
+    }
+
+    .composer input,
+    .composer textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font: inherit;
+      background: #0a1730;
+      color: var(--text);
+    }
+
+    .composer input {
+      margin-bottom: 10px;
+    }
+
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .color-row label {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .color-picker {
+      width: 44px;
+      height: 32px;
+      padding: 2px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0a1730;
+      cursor: pointer;
+    }
+
+    .color-reset {
+      background: #2a3f64;
+      color: #e8f0ff;
+      font-weight: 700;
+      padding: 7px 10px;
+    }
+
+    .color-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: -2px 0 10px;
+    }
+
+    .color-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 2px solid #6079a3;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .color-swatch.active {
+      border-color: #e8f0ff;
+      box-shadow: 0 0 0 2px #1f355d;
+    }
+
+    .composer textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .deadline-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .deadline-row label {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .composer input::placeholder,
+    .composer textarea::placeholder { color: #8fa5c9; }
+
+    .composer .toolbar {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .dropzone {
+      flex: 1;
+      min-width: 240px;
+      border: 1px dashed #4d6795;
+      border-radius: 10px;
+      padding: 10px;
+      color: var(--muted);
+      background: #0a1730;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background: #132b55;
+      color: #e9f2ff;
+    }
+
+    .actions { display: flex; gap: 8px; }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font: inherit;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .primary { background: var(--accent); color: #fff; }
+    .primary:hover { background: var(--accent-2); }
+    .ghost { background: #1f355d; color: var(--text); }
+
+    .preview {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .preview img,
+    .note-images img {
+      width: 120px;
+      height: 84px;
+      object-fit: contain;
+      background: #0a1730;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      cursor: zoom-in;
+      padding: 2px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .column {
+      background: rgba(12, 26, 50, 0.75);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      min-height: 360px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .column h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 280px;
+    }
+
+    .list.dragover {
+      outline: 2px dashed var(--accent);
+      outline-offset: 2px;
+      border-radius: 8px;
+    }
+
+    .note {
+      --note-bg: var(--card-soft);
+      background: var(--note-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 8px 20px rgba(1, 5, 16, 0.32);
+    }
+
+    .note.drag-before {
+      box-shadow: 0 -3px 0 #8fc2ff, 0 8px 20px rgba(1, 5, 16, 0.32);
+    }
+
+    .note.drag-after {
+      box-shadow: 0 3px 0 #8fc2ff, 0 8px 20px rgba(1, 5, 16, 0.32);
+    }
+
+    .note-timer {
+      margin: 0 0 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #38527a;
+      background: rgba(9, 22, 44, 0.7);
+      color: #d8e8ff;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .note-timer.overdue {
+      border-color: #7a3a3a;
+      background: rgba(74, 22, 22, 0.55);
+      color: #ffd6d6;
+    }
+
+    .focus-timer {
+      margin: 0;
+      font-size: 1.45rem;
+      line-height: 1.2;
+      padding: 8px 10px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .focus-timer:hover {
+      border-color: #7bb7ff;
+      background: rgba(25, 47, 82, 0.8);
+    }
+
+    .note.flash {
+      outline: 2px solid #7bb7ff;
+      outline-offset: 2px;
+    }
+
+    .done-note {
+      filter: grayscale(0.45);
+      opacity: 0.62;
+      background: var(--note-bg, #243142);
+      border-color: #415166;
+    }
+
+    .note-title {
+      margin: 0 0 6px;
+      font-weight: 700;
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+
+    .note-desc {
+      margin: 0 0 8px;
+      white-space: pre-wrap;
+      color: #d7e5ff;
+    }
+
+    .note a {
+      color: #8fc2ff;
+      text-decoration: underline;
+      word-break: break-word;
+    }
+
+    .note-images {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .note-actions { display: flex; gap: 8px; }
+    .edit-img-btn { background: #2b4e7d; color: #dbe9ff; }
+    .move-done { background: #1b5f3b; color: #d5ffea; }
+    .move-todo { background: #24406c; color: #d9e8ff; }
+    .del { background: #6a2631; color: #ffe5ea; }
+
+    .image-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(1, 4, 12, 0.84);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
+    }
+
+    .image-modal.open { display: flex; }
+
+    .image-modal img {
+      max-width: min(96vw, 1400px);
+      max-height: 92vh;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid #415f95;
+      background: #081329;
+    }
+
+    .edit-images-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(1, 4, 12, 0.84);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 10000;
+    }
+
+    .edit-images-modal.open { display: flex; }
+
+    .edit-images-panel {
+      width: min(900px, 96vw);
+      max-height: 90vh;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #0f1f3b;
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .edit-note-field {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font: inherit;
+      background: #0a1730;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .edit-note-field::placeholder { color: #8fa5c9; }
+
+    .edit-note-textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .edit-images-dropzone {
+      border: 1px dashed #4d6795;
+      border-radius: 10px;
+      padding: 10px;
+      color: var(--muted);
+      background: #0a1730;
+      margin-bottom: 10px;
+    }
+
+    .edit-images-dropzone.dragover {
+      border-color: var(--accent);
+      background: #132b55;
+      color: #e9f2ff;
+    }
+
+    .edit-images-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .edit-image-item {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0a1730;
+      padding: 6px;
+    }
+
+    .edit-image-item img {
+      width: 100%;
+      height: 96px;
+      object-fit: contain;
+      background: #081329;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      cursor: zoom-in;
+    }
+
+    .edit-image-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 6px;
+    }
+
+    .edit-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1200px) {
+      .workspace-grid { grid-template-columns: 1fr; }
+      .timer-pane {
+        position: static;
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .board { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="workspace-grid">
+      <div class="left-pane">
+        <aside class="timer-pane">
+          <h2>Таймери Задач</h2>
+          <div class="focus-list" id="deadlineFocusList"></div>
+        </aside>
+      </div>
+      <div class="main-pane">
+        <header class="site-head">
+          <h1>Нотатки по нішах YouTube</h1>
+          <div class="hint">Вставка картинок: <b>Ctrl+V</b> або перетягування у зону. Клік по картинці відкриває її у повному розмірі.</div>
+          <section class="tabs" id="tabs"></section>
+          <div class="backup-actions">
+            <button type="button" class="backup-btn" id="exportJsonBtn">SAVE</button>
+            <button type="button" class="backup-btn" id="importJsonBtn">LOAD</button>
+            <input type="file" id="importJsonInput" accept="application/json,.json" hidden />
+          </div>
+        </header>
+        <section class="composer" id="composer">
+          <input id="noteTitle" type="text" placeholder="Заголовок (наприклад: Ідея для Shorts)" />
+          <textarea id="noteDescription" placeholder="Опис нотатки..."></textarea>
+          <div class="color-row">
+            <label for="noteColor">Колір задачі</label>
+            <input id="noteColor" class="color-picker" type="color" value="#13284a" />
+            <button type="button" class="color-reset" id="resetNoteColor">Скинути</button>
+          </div>
+          <div class="color-presets" id="noteColorPresets"></div>
+          <div class="deadline-row">
+            <label for="noteDeadline">Дедлайн</label>
+            <input id="noteDeadline" type="datetime-local" />
+          </div>
+          <div class="toolbar">
+            <div class="dropzone" id="dropzone">Скиньте сюди картинки або натисніть Ctrl+V після копіювання</div>
+            <div class="actions">
+              <button class="ghost" id="clearImages">Очистити картинки</button>
+              <button class="primary" id="addNote">Додати</button>
+            </div>
+          </div>
+          <div class="preview" id="preview"></div>
+        </section>
+
+        <section class="board">
+          <div class="column">
+            <h2>To Do</h2>
+            <div class="list" id="todoList"></div>
+          </div>
+          <div class="column">
+            <h2>Done</h2>
+            <div class="list" id="doneList"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div class="image-modal" id="imageModal" aria-hidden="true">
+    <img id="modalImage" alt="Full image preview" />
+  </div>
+  <div class="edit-images-modal" id="editImagesModal" aria-hidden="true">
+    <div class="edit-images-panel">
+      <h3>Редагування нотатки</h3>
+      <input id="editNoteTitle" class="edit-note-field" type="text" placeholder="Заголовок" />
+      <textarea id="editNoteDescription" class="edit-note-field edit-note-textarea" placeholder="Опис"></textarea>
+      <div class="color-row">
+        <label for="editNoteColor">Колір задачі</label>
+        <input id="editNoteColor" class="color-picker" type="color" value="#13284a" />
+        <button type="button" class="color-reset" id="resetEditNoteColor">Скинути</button>
+      </div>
+      <div class="color-presets" id="editNoteColorPresets"></div>
+      <div class="deadline-row">
+        <label for="editNoteDeadline">Дедлайн</label>
+        <input id="editNoteDeadline" type="datetime-local" />
+      </div>
+      <div class="edit-images-dropzone" id="editImagesDropzone">Перетягни сюди картинки або натисни Ctrl+V</div>
+      <div class="edit-images-grid" id="editImagesGrid"></div>
+      <div class="edit-toolbar">
+        <div class="actions">
+          <button class="ghost" id="addImagesToNote">Додати файли</button>
+          <input type="file" id="noteImageFileInput" accept="image/*" multiple hidden />
+        </div>
+        <div class="actions">
+          <button class="ghost" id="cancelEditImages">Скасувати</button>
+          <button class="primary" id="saveEditImages">Зберегти</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_TABS = [
+      "Ігри для YouTube",
+      "YouTube канали",
+      "Ніші",
+      "Потім подивитись",
+      "3D симуляції"
+    ];
+
+    const KEY = "youtube-niche-notes-v1";
+    const loadedState = loadState();
+    let tabs = loadedState.tabs;
+    let state = loadedState.data;
+    let activeTab = loadedState.activeTab;
+    let pendingImages = [];
+
+    const tabsEl = document.getElementById("tabs");
+    const exportJsonBtnEl = document.getElementById("exportJsonBtn");
+    const importJsonBtnEl = document.getElementById("importJsonBtn");
+    const importJsonInputEl = document.getElementById("importJsonInput");
+    const todoListEl = document.getElementById("todoList");
+    const doneListEl = document.getElementById("doneList");
+    const deadlineFocusListEl = document.getElementById("deadlineFocusList");
+    const noteTitleEl = document.getElementById("noteTitle");
+    const noteDescriptionEl = document.getElementById("noteDescription");
+    const noteColorEl = document.getElementById("noteColor");
+    const noteColorPresetsEl = document.getElementById("noteColorPresets");
+    const resetNoteColorEl = document.getElementById("resetNoteColor");
+    const noteDeadlineEl = document.getElementById("noteDeadline");
+    const dropzoneEl = document.getElementById("dropzone");
+    const previewEl = document.getElementById("preview");
+    const imageModalEl = document.getElementById("imageModal");
+    const modalImageEl = document.getElementById("modalImage");
+    const editImagesModalEl = document.getElementById("editImagesModal");
+    const editImagesGridEl = document.getElementById("editImagesGrid");
+    const editImagesDropzoneEl = document.getElementById("editImagesDropzone");
+    const noteImageFileInputEl = document.getElementById("noteImageFileInput");
+    const editNoteTitleEl = document.getElementById("editNoteTitle");
+    const editNoteDescriptionEl = document.getElementById("editNoteDescription");
+    const editNoteColorEl = document.getElementById("editNoteColor");
+    const editNoteColorPresetsEl = document.getElementById("editNoteColorPresets");
+    const resetEditNoteColorEl = document.getElementById("resetEditNoteColor");
+    const editNoteDeadlineEl = document.getElementById("editNoteDeadline");
+    let editingNoteRef = null;
+    let editingImages = [];
+    let isTabEditMode = false;
+    let countdownIntervalId = null;
+    let currentDraggedNote = null;
+    let currentDraggedTab = null;
+    const DEFAULT_NOTE_COLOR = "#13284a";
+    const DARK_PRESET_COLORS = [
+      "#13284a",
+      "#1e2f5a",
+      "#2a3450",
+      "#2f2c49",
+      "#3b2a42",
+      "#2a3f36",
+      "#3d3328",
+      "#333333"
+    ];
+    if (!tabs.length) tabs = [...DEFAULT_TABS];
+    if (!activeTab || !tabs.includes(activeTab)) activeTab = tabs[0];
+    ensureTabData(activeTab);
+
+    function createEmptyBucket() {
+      return { todo: [], done: [] };
+    }
+
+    function normalizeBucket(bucket) {
+      return {
+        todo: Array.isArray(bucket?.todo) ? bucket.todo : [],
+        done: Array.isArray(bucket?.done) ? bucket.done : []
+      };
+    }
+
+    function sanitizeImportedState(parsed) {
+      if (!parsed || !Array.isArray(parsed.tabs) || !parsed.data || typeof parsed.data !== "object") {
+        return null;
+      }
+      const saneTabs = parsed.tabs
+        .filter((t) => typeof t === "string" && t.trim())
+        .map((t) => t.trim());
+      const finalTabs = saneTabs.length ? Array.from(new Set(saneTabs)) : [...DEFAULT_TABS];
+      const data = {};
+      finalTabs.forEach((tab) => {
+        data[tab] = normalizeBucket(parsed.data[tab]);
+      });
+      return {
+        tabs: finalTabs,
+        data,
+        activeTab: finalTabs.includes(parsed.activeTab) ? parsed.activeTab : finalTabs[0]
+      };
+    }
+
+    function ensureTabData(tabName) {
+      if (!state[tabName]) state[tabName] = createEmptyBucket();
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+
+        if (parsed && Array.isArray(parsed.tabs) && parsed.data && typeof parsed.data === "object") {
+          const saneTabs = parsed.tabs
+            .filter((t) => typeof t === "string" && t.trim())
+            .map((t) => t.trim());
+          const finalTabs = saneTabs.length ? Array.from(new Set(saneTabs)) : [...DEFAULT_TABS];
+          const data = {};
+          finalTabs.forEach((tab) => {
+            data[tab] = normalizeBucket(parsed.data[tab]);
+          });
+          return {
+            tabs: finalTabs,
+            data,
+            activeTab: finalTabs.includes(parsed.activeTab) ? parsed.activeTab : finalTabs[0]
+          };
+        }
+
+        const legacy = parsed && typeof parsed === "object" ? parsed : {};
+        const data = {};
+        const finalTabs = [];
+
+        DEFAULT_TABS.forEach((tab) => {
+          finalTabs.push(tab);
+          data[tab] = normalizeBucket(legacy[tab]);
+        });
+
+        Object.entries(legacy).forEach(([tab, value]) => {
+          if (!finalTabs.includes(tab) && value && typeof value === "object") {
+            finalTabs.push(tab);
+            data[tab] = normalizeBucket(value);
+          }
+        });
+
+        return { tabs: finalTabs, data, activeTab: finalTabs[0] };
+      } catch {
+        const data = {};
+        const finalTabs = [...DEFAULT_TABS];
+        finalTabs.forEach((tab) => {
+          data[tab] = createEmptyBucket();
+        });
+        return { tabs: finalTabs, data, activeTab: finalTabs[0] };
+      }
+    }
+
+    function saveState() {
+      if (!tabs.length) tabs = ["Нова вкладка"];
+      if (!tabs.includes(activeTab)) activeTab = tabs[0];
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ tabs, data: state, activeTab }));
+        return true;
+      } catch (err) {
+        alert("Не вдалося зберегти. Картинки завеликі для локального сховища. Спробуйте менші зображення.");
+        console.error("saveState failed:", err);
+        return false;
+      }
+    }
+
+    function buildBackupPayload() {
+      return {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        tabs,
+        activeTab,
+        data: state
+      };
+    }
+
+    function buildBackupFileName() {
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      return `backup-${stamp}.json`;
+    }
+
+    function downloadBackupJson() {
+      const payload = buildBackupPayload();
+      const text = JSON.stringify(payload, null, 2);
+      const blob = new Blob([text], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = buildBackupFileName();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function saveBackupFile() {
+      const payload = buildBackupPayload();
+      const text = JSON.stringify(payload, null, 2);
+      const fileName = buildBackupFileName();
+      if (window.showDirectoryPicker) {
+        try {
+          alert("Оберіть папку для збереження, бажано: F:\\Game\\ToDo\\SAVE");
+          const dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+          const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(text);
+          await writable.close();
+          alert(`Збережено: ${fileName}`);
+          return;
+        } catch (err) {
+          if (err?.name === "AbortError") return;
+          console.warn("Directory save failed, fallback to download:", err);
+        }
+      }
+
+      // Fallback for browsers without File System Access API.
+      downloadBackupJson();
+    }
+
+    function exportStateAsJson() {
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        tabs,
+        activeTab,
+        data: state
+      };
+      const text = JSON.stringify(payload, null, 2);
+      const blob = new Blob([text], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      a.href = url;
+      a.download = `youtube-notes-backup-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function importStateFromFile(file) {
+      if (!file) return;
+      const raw = await file.text();
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        alert("Файл не є коректним JSON.");
+        return;
+      }
+      const sanitized = sanitizeImportedState(parsed);
+      if (!sanitized) {
+        alert("Невірний формат бекапу.");
+        return;
+      }
+      tabs = sanitized.tabs;
+      state = sanitized.data;
+      activeTab = sanitized.activeTab;
+      if (!saveState()) return;
+      renderTabs();
+      renderLists();
+      alert("Імпорт завершено.");
+    }
+
+    async function loadBackupFile() {
+      if (window.showOpenFilePicker) {
+        try {
+          const [fileHandle] = await window.showOpenFilePicker({
+            multiple: false,
+            types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
+          });
+          const file = await fileHandle.getFile();
+          await importStateFromFile(file);
+          return;
+        } catch (err) {
+          if (err?.name === "AbortError") return;
+          console.warn("OpenFilePicker failed, fallback to input:", err);
+        }
+      }
+      importJsonInputEl.click();
+    }
+
+    function addTab() {
+      const name = prompt("Нова назва вкладки:");
+      if (name === null) return;
+      const clean = name.trim();
+      if (!clean) return;
+      if (tabs.includes(clean)) {
+        alert("Така вкладка вже існує.");
+        return;
+      }
+      tabs.push(clean);
+      ensureTabData(clean);
+      activeTab = clean;
+      saveState();
+      renderTabs();
+      renderLists();
+    }
+
+    function renameTab(oldName) {
+      const name = prompt("Нова назва вкладки:", oldName);
+      if (name === null) return;
+      const clean = name.trim();
+      if (!clean || clean === oldName) return;
+      if (tabs.includes(clean)) {
+        alert("Така вкладка вже існує.");
+        return;
+      }
+      const idx = tabs.indexOf(oldName);
+      if (idx < 0) return;
+      tabs[idx] = clean;
+      state[clean] = state[oldName] || createEmptyBucket();
+      delete state[oldName];
+      if (activeTab === oldName) activeTab = clean;
+      saveState();
+      renderTabs();
+      renderLists();
+    }
+
+    function deleteTab(tabName) {
+      if (tabs.length <= 1) {
+        alert("Потрібна хоча б одна вкладка.");
+        return;
+      }
+      if (!confirm(`Видалити вкладку "${tabName}" разом з її нотатками?`)) return;
+      tabs = tabs.filter((t) => t !== tabName);
+      delete state[tabName];
+      if (activeTab === tabName) activeTab = tabs[0];
+      saveState();
+      renderTabs();
+      renderLists();
+    }
+
+    function uid() {
+      return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function normalizeColor(value, fallback = DEFAULT_NOTE_COLOR) {
+      return /^#[0-9a-fA-F]{6}$/.test(value || "") ? value : fallback;
+    }
+
+    function normalizeDeadline(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+    }
+
+    function deadlineToInputValue(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return "";
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 16);
+    }
+
+    function formatRemaining(deadline) {
+      const d = new Date(deadline);
+      if (Number.isNaN(d.getTime())) return "";
+      const diff = d.getTime() - Date.now();
+      const abs = Math.abs(diff);
+      const days = Math.floor(abs / 86400000);
+      const hours = Math.floor((abs % 86400000) / 3600000);
+      const mins = Math.floor((abs % 3600000) / 60000);
+      const secs = Math.floor((abs % 60000) / 1000);
+      const text = `${days}д ${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+      return diff >= 0 ? text : `-${text}`;
+    }
+
+    function updateCountdowns() {
+      document.querySelectorAll(".countdown[data-deadline]").forEach((el) => {
+        const deadline = el.dataset.deadline || "";
+        const d = new Date(deadline);
+        if (!deadline || Number.isNaN(d.getTime())) {
+          el.textContent = "";
+          el.classList.remove("overdue");
+          return;
+        }
+        el.textContent = formatRemaining(deadline);
+        el.classList.toggle("overdue", d.getTime() < Date.now());
+      });
+    }
+
+    function goToTask(tabName, noteId) {
+      activeTab = tabName;
+      saveState();
+      renderTabs();
+      renderLists();
+      setTimeout(() => {
+        const target = document.querySelector(`.note[data-id="${noteId}"]`);
+        if (!target) return;
+        target.classList.add("flash");
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => target.classList.remove("flash"), 1500);
+      }, 0);
+    }
+
+    function renderDeadlineFocus() {
+      deadlineFocusListEl.innerHTML = "";
+      const rows = [];
+      tabs.forEach((tabName) => {
+        ensureTabData(tabName);
+        ["todo", "done"].forEach((from) => {
+          state[tabName][from].forEach((note) => {
+            if (!note.deadline) return;
+            const d = new Date(note.deadline);
+            if (Number.isNaN(d.getTime())) return;
+            rows.push({ note, from, tabName, time: d.getTime() });
+          });
+        });
+      });
+
+      rows.sort((a, b) => a.time - b.time);
+      if (!rows.length) {
+        const empty = document.createElement("div");
+        empty.className = "focus-meta";
+        empty.textContent = "Немає задач з дедлайном у цій вкладці.";
+        deadlineFocusListEl.appendChild(empty);
+        return;
+      }
+
+      rows.forEach(({ note, from, tabName }) => {
+        const item = document.createElement("article");
+        item.className = "focus-item";
+        item.style.background = normalizeColor(note.color);
+
+        const title = document.createElement("h3");
+        title.className = "focus-title";
+        title.textContent = (note.title || note.description || "(без назви)").trim();
+
+        const timer = document.createElement("button");
+        timer.type = "button";
+        timer.className = "note-timer focus-timer countdown";
+        timer.dataset.deadline = note.deadline;
+        timer.textContent = formatRemaining(note.deadline);
+        if (new Date(note.deadline).getTime() < Date.now()) timer.classList.add("overdue");
+        timer.onclick = () => goToTask(tabName, note.id);
+
+        const meta = document.createElement("p");
+        meta.className = "focus-meta";
+        const col = from === "done" ? "Done" : "To Do";
+        meta.textContent = `${tabName} · ${col}`;
+
+        item.append(title, timer, meta);
+        deadlineFocusListEl.appendChild(item);
+      });
+    }
+
+    function renderColorPresets(container, colorInput) {
+      container.innerHTML = "";
+      DARK_PRESET_COLORS.forEach((hex) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "color-swatch";
+        btn.style.background = hex;
+        btn.title = hex;
+        if (normalizeColor(colorInput.value) === hex) btn.classList.add("active");
+        btn.onclick = () => {
+          colorInput.value = hex;
+          updatePresetSelection(container, colorInput);
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function updatePresetSelection(container, colorInput) {
+      const value = normalizeColor(colorInput.value);
+      Array.from(container.children).forEach((el) => {
+        if (!(el instanceof HTMLElement)) return;
+        const hex = (el.title || "").toLowerCase();
+        el.classList.toggle("active", hex === value.toLowerCase());
+      });
+    }
+
+    function openImage(src) {
+      modalImageEl.src = src;
+      imageModalEl.classList.add("open");
+      imageModalEl.setAttribute("aria-hidden", "false");
+    }
+
+    function closeImage() {
+      imageModalEl.classList.remove("open");
+      imageModalEl.setAttribute("aria-hidden", "true");
+      modalImageEl.removeAttribute("src");
+    }
+
+    function createThumb(src, alt) {
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = alt;
+      img.addEventListener("click", () => openImage(src));
+      return img;
+    }
+
+    function appendLinkedText(container, text) {
+      const value = text ?? "";
+      const lines = value.split("\n");
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+      lines.forEach((line, lineIndex) => {
+        let lastIndex = 0;
+        line.replace(urlRegex, (url, _m, offset) => {
+          if (offset > lastIndex) {
+            container.appendChild(document.createTextNode(line.slice(lastIndex, offset)));
+          }
+          const a = document.createElement("a");
+          a.href = url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.textContent = url;
+          container.appendChild(a);
+          lastIndex = offset + url.length;
+          return url;
+        });
+
+        if (lastIndex < line.length) {
+          container.appendChild(document.createTextNode(line.slice(lastIndex)));
+        }
+
+        if (lineIndex < lines.length - 1) {
+          container.appendChild(document.createElement("br"));
+        }
+      });
+    }
+
+    function findNoteRef(id, from) {
+      ensureTabData(activeTab);
+      const data = state[activeTab];
+      const list = data[from];
+      const idx = list.findIndex((n) => n.id === id);
+      if (idx < 0) return null;
+      return { from, idx };
+    }
+
+    function closeEditImages() {
+      editImagesModalEl.classList.remove("open");
+      editImagesModalEl.setAttribute("aria-hidden", "true");
+      editingNoteRef = null;
+      editingImages = [];
+      editNoteTitleEl.value = "";
+      editNoteDescriptionEl.value = "";
+      editNoteDeadlineEl.value = "";
+      if (editNoteColorEl) {
+        editNoteColorEl.value = DEFAULT_NOTE_COLOR;
+        updatePresetSelection(editNoteColorPresetsEl, editNoteColorEl);
+      }
+      editImagesGridEl.innerHTML = "";
+    }
+
+    function renderEditImages() {
+      editImagesGridEl.innerHTML = "";
+      editingImages.forEach((src, index) => {
+        const item = document.createElement("div");
+        item.className = "edit-image-item";
+        const img = createThumb(src, "edit image");
+        const actions = document.createElement("div");
+        actions.className = "edit-image-actions";
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "del";
+        removeBtn.textContent = "Видалити";
+        removeBtn.onclick = () => {
+          editingImages.splice(index, 1);
+          renderEditImages();
+        };
+        actions.appendChild(removeBtn);
+        item.append(img, actions);
+        editImagesGridEl.appendChild(item);
+      });
+    }
+
+    async function addImagesToEditing(fileList) {
+      const images = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+      for (const f of images) {
+        const data = await fileToDataUrl(f);
+        editingImages.push(data);
+      }
+      renderEditImages();
+    }
+
+    function openEditImages(noteId, from) {
+      ensureTabData(activeTab);
+      const ref = findNoteRef(noteId, from);
+      if (!ref) return;
+      editingNoteRef = ref;
+      const note = state[activeTab][ref.from][ref.idx];
+      editingImages = [...(note.images || [])];
+      editNoteTitleEl.value = note.title ?? "";
+      editNoteDescriptionEl.value = note.description ?? note.text ?? "";
+      editNoteDeadlineEl.value = deadlineToInputValue(note.deadline);
+      if (editNoteColorEl) {
+        editNoteColorEl.value = normalizeColor(note.color);
+        updatePresetSelection(editNoteColorPresetsEl, editNoteColorEl);
+      }
+      renderEditImages();
+      editImagesModalEl.classList.add("open");
+      editImagesModalEl.setAttribute("aria-hidden", "false");
+    }
+
+    function saveEditImages() {
+      if (!editingNoteRef) return;
+      ensureTabData(activeTab);
+      const note = state[activeTab][editingNoteRef.from][editingNoteRef.idx];
+      const backup = {
+        title: note.title ?? "",
+        description: note.description ?? note.text ?? "",
+        deadline: note.deadline ?? "",
+        color: note.color,
+        text: note.text,
+        images: [...(note.images || [])]
+      };
+      note.title = editNoteTitleEl.value.trim();
+      note.description = editNoteDescriptionEl.value.trim();
+      note.deadline = normalizeDeadline(editNoteDeadlineEl.value);
+      note.color = normalizeColor(editNoteColorEl?.value);
+      delete note.text;
+      note.images = [...editingImages];
+      if (!saveState()) {
+        note.title = backup.title;
+        note.description = backup.description;
+        note.deadline = backup.deadline;
+        note.color = backup.color;
+        if (backup.text !== undefined) note.text = backup.text;
+        note.images = backup.images;
+        return;
+      }
+      renderLists();
+      closeEditImages();
+    }
+
+    function getDraggedNotePayload(e) {
+      if (currentDraggedNote?.id && currentDraggedNote?.from) return currentDraggedNote;
+      const raw = e.dataTransfer?.getData("application/x-note");
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed?.id || !parsed?.from) return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+
+    function clearNoteDropMarkers() {
+      document.querySelectorAll(".note.drag-before, .note.drag-after").forEach((el) => {
+        el.classList.remove("drag-before", "drag-after");
+      });
+    }
+
+    function moveNoteTo(id, from, to, targetIndex) {
+      ensureTabData(activeTab);
+      const data = state[activeTab];
+      const fromList = data[from];
+      const toList = data[to];
+      const fromIdx = fromList.findIndex((n) => n.id === id);
+      if (fromIdx < 0) return;
+
+      const [item] = fromList.splice(fromIdx, 1);
+      if (to === "done" && item.deadline) {
+        const closeTimer = confirm("Закрити таймер?");
+        if (closeTimer) {
+          item.deadline = "";
+        }
+      }
+      let index = Math.max(0, Math.min(targetIndex, toList.length));
+      if (from === to && index > fromIdx) index -= 1;
+      toList.splice(index, 0, item);
+      if (saveState()) renderLists();
+    }
+
+    function moveTabTo(sourceTab, targetTab, placeAfter) {
+      if (sourceTab === targetTab) return;
+      const fromIdx = tabs.indexOf(sourceTab);
+      const targetIdx = tabs.indexOf(targetTab);
+      if (fromIdx < 0 || targetIdx < 0) return;
+      tabs.splice(fromIdx, 1);
+      let insertIdx = targetIdx;
+      if (fromIdx < targetIdx) insertIdx -= 1;
+      if (placeAfter) insertIdx += 1;
+      tabs.splice(insertIdx, 0, sourceTab);
+      if (saveState()) renderTabs();
+    }
+
+    function getDraggedTabPayload(e) {
+      if (currentDraggedTab && tabs.includes(currentDraggedTab)) return currentDraggedTab;
+      const tabName = e.dataTransfer?.getData("application/x-tab");
+      return tabName && tabs.includes(tabName) ? tabName : null;
+    }
+
+    function renderTabs() {
+      tabsEl.innerHTML = "";
+      tabs.forEach((tab) => {
+        const item = document.createElement("div");
+        item.className = "tab-item";
+        item.draggable = true;
+        item.dataset.tabName = tab;
+
+        const b = document.createElement("button");
+        b.className = "tab" + (tab === activeTab ? " active" : "");
+        b.textContent = tab;
+        b.onclick = () => {
+          activeTab = tab;
+          saveState();
+          renderTabs();
+          renderLists();
+        };
+
+        item.appendChild(b);
+
+        item.addEventListener("dragstart", (e) => {
+          currentDraggedTab = tab;
+          e.dataTransfer.setData("application/x-tab", tab);
+          e.dataTransfer.effectAllowed = "move";
+        });
+        item.addEventListener("dragend", () => {
+          currentDraggedTab = null;
+          tabsEl.querySelectorAll(".tab-item").forEach((el) => el.classList.remove("drag-before", "drag-after"));
+        });
+        item.addEventListener("dragover", (e) => {
+          const dragged = getDraggedTabPayload(e);
+          if (!dragged || dragged === tab) return;
+          e.preventDefault();
+          const rect = item.getBoundingClientRect();
+          const before = e.clientX < rect.left + rect.width / 2;
+          tabsEl.querySelectorAll(".tab-item").forEach((el) => el.classList.remove("drag-before", "drag-after"));
+          item.classList.add(before ? "drag-before" : "drag-after");
+        });
+        item.addEventListener("dragleave", () => {
+          item.classList.remove("drag-before", "drag-after");
+        });
+        item.addEventListener("drop", (e) => {
+          const dragged = getDraggedTabPayload(e);
+          if (!dragged || dragged === tab) return;
+          e.preventDefault();
+          const rect = item.getBoundingClientRect();
+          const before = e.clientX < rect.left + rect.width / 2;
+          tabsEl.querySelectorAll(".tab-item").forEach((el) => el.classList.remove("drag-before", "drag-after"));
+          moveTabTo(dragged, tab, !before);
+        });
+
+        if (isTabEditMode) {
+          const renameBtn = document.createElement("button");
+          renameBtn.className = "tab-mini";
+          renameBtn.textContent = "✎";
+          renameBtn.title = "Перейменувати вкладку";
+          renameBtn.onclick = () => renameTab(tab);
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "tab-mini danger";
+          deleteBtn.textContent = "×";
+          deleteBtn.title = "Видалити вкладку";
+          deleteBtn.onclick = () => deleteTab(tab);
+          item.append(renameBtn, deleteBtn);
+        }
+
+        tabsEl.appendChild(item);
+      });
+
+      if (isTabEditMode) {
+        const addBtn = document.createElement("button");
+        addBtn.className = "tab tab-add";
+        addBtn.textContent = "+ Додати вкладку";
+        addBtn.onclick = addTab;
+        tabsEl.appendChild(addBtn);
+      }
+
+      const toggleEditBtn = document.createElement("button");
+      toggleEditBtn.className = "tab tab-edit-toggle";
+      toggleEditBtn.textContent = isTabEditMode ? "Готово" : "Редагувати вкладки";
+      toggleEditBtn.onclick = () => {
+        isTabEditMode = !isTabEditMode;
+        renderTabs();
+      };
+      tabsEl.appendChild(toggleEditBtn);
+    }
+
+    function noteCard(note, isDone) {
+      const card = document.createElement("article");
+      card.className = "note";
+      card.style.setProperty("--note-bg", normalizeColor(note.color));
+      if (isDone) card.classList.add("done-note");
+      card.draggable = true;
+      card.dataset.id = note.id;
+      card.dataset.from = isDone ? "done" : "todo";
+
+      card.addEventListener("dragstart", (e) => {
+        const payloadObj = { type: "note", id: note.id, from: card.dataset.from };
+        currentDraggedNote = payloadObj;
+        const payload = JSON.stringify(payloadObj);
+        e.dataTransfer.setData("application/x-note", payload);
+        e.dataTransfer.setData("text/plain", payload);
+        e.dataTransfer.effectAllowed = "move";
+      });
+
+      card.addEventListener("dragend", () => {
+        currentDraggedNote = null;
+        clearNoteDropMarkers();
+        [todoListEl, doneListEl].forEach((list) => list.classList.remove("dragover"));
+      });
+
+      card.addEventListener("dragover", (e) => {
+        const payload = getDraggedNotePayload(e);
+        if (!payload) return;
+        e.preventDefault();
+        const rect = card.getBoundingClientRect();
+        const before = e.clientY < rect.top + rect.height / 2;
+        clearNoteDropMarkers();
+        card.classList.add(before ? "drag-before" : "drag-after");
+      });
+
+      card.addEventListener("dragleave", () => {
+        card.classList.remove("drag-before", "drag-after");
+      });
+
+      card.addEventListener("drop", (e) => {
+        const payload = getDraggedNotePayload(e);
+        if (!payload) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = card.getBoundingClientRect();
+        const before = e.clientY < rect.top + rect.height / 2;
+        const targetListName = card.dataset.from;
+        const targetList = state[activeTab][targetListName];
+        const targetIndex = targetList.findIndex((n) => n.id === note.id);
+        const insertIndex = before ? targetIndex : targetIndex + 1;
+        clearNoteDropMarkers();
+        moveNoteTo(payload.id, payload.from, targetListName, insertIndex);
+      });
+
+      const title = (note.title ?? "").trim();
+      const description = (note.description ?? note.text ?? "").trim();
+      const deadline = note.deadline ?? "";
+
+      if (deadline) {
+        const timer = document.createElement("div");
+        timer.className = "note-timer countdown";
+        timer.dataset.deadline = deadline;
+        timer.textContent = formatRemaining(deadline);
+        if (new Date(deadline).getTime() < Date.now()) timer.classList.add("overdue");
+        card.appendChild(timer);
+      }
+
+      if (title) {
+        const titleEl = document.createElement("h3");
+        titleEl.className = "note-title";
+        appendLinkedText(titleEl, title);
+        card.appendChild(titleEl);
+      }
+
+      if (description || !title) {
+        const descEl = document.createElement("p");
+        descEl.className = "note-desc";
+        appendLinkedText(descEl, description || "(без опису)");
+        card.appendChild(descEl);
+      }
+
+      if (note.images?.length) {
+        const imgWrap = document.createElement("div");
+        imgWrap.className = "note-images";
+        note.images.forEach((src) => {
+          imgWrap.appendChild(createThumb(src, "note image"));
+        });
+        card.appendChild(imgWrap);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "note-actions";
+
+      const move = document.createElement("button");
+      move.className = isDone ? "move-todo" : "move-done";
+      move.textContent = isDone ? "В To Do" : "В Done";
+      move.onclick = () => moveNote(note.id, isDone ? "done" : "todo", isDone ? "todo" : "done");
+
+      const del = document.createElement("button");
+      del.className = "del";
+      del.textContent = "Видалити";
+      del.onclick = () => deleteNote(note.id, isDone ? "done" : "todo");
+
+      const editImagesBtn = document.createElement("button");
+      editImagesBtn.className = "edit-img-btn";
+      editImagesBtn.textContent = "Редагувати";
+      editImagesBtn.onclick = () => openEditImages(note.id, isDone ? "done" : "todo");
+
+      actions.append(move, editImagesBtn, del);
+      card.appendChild(actions);
+      return card;
+    }
+
+    function renderLists() {
+      ensureTabData(activeTab);
+      const data = state[activeTab];
+      todoListEl.innerHTML = "";
+      doneListEl.innerHTML = "";
+
+      data.todo.forEach((n) => todoListEl.appendChild(noteCard(n, false)));
+      data.done.forEach((n) => doneListEl.appendChild(noteCard(n, true)));
+      renderDeadlineFocus();
+      updateCountdowns();
+    }
+
+    function moveNote(id, from, to) {
+      if (from === to) return;
+      moveNoteTo(id, from, to, 0);
+    }
+
+    function deleteNote(id, from) {
+      ensureTabData(activeTab);
+      const data = state[activeTab];
+      const idx = data[from].findIndex((n) => n.id === id);
+      if (idx < 0) return;
+      data[from].splice(idx, 1);
+      saveState();
+      renderLists();
+    }
+
+    function addNote() {
+      ensureTabData(activeTab);
+      const title = noteTitleEl.value.trim();
+      const description = noteDescriptionEl.value.trim();
+      if (!title && !description && pendingImages.length === 0) return;
+      state[activeTab].todo.unshift({
+        id: uid(),
+        title,
+        description,
+        deadline: normalizeDeadline(noteDeadlineEl.value),
+        color: normalizeColor(noteColorEl?.value),
+        images: [...pendingImages]
+      });
+      if (!saveState()) {
+        state[activeTab].todo.shift();
+        return;
+      }
+      noteTitleEl.value = "";
+      noteDescriptionEl.value = "";
+      noteDeadlineEl.value = "";
+      if (noteColorEl) {
+        noteColorEl.value = DEFAULT_NOTE_COLOR;
+        updatePresetSelection(noteColorPresetsEl, noteColorEl);
+      }
+      pendingImages = [];
+      renderPreview();
+      renderLists();
+    }
+
+    function renderPreview() {
+      previewEl.innerHTML = "";
+      pendingImages.forEach((src) => {
+        previewEl.appendChild(createThumb(src, "preview"));
+      });
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          try {
+            const maxSide = 1400;
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const w = Math.max(1, Math.round(img.width * scale));
+            const h = Math.max(1, Math.round(img.height * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            const out = canvas.toDataURL("image/webp", 0.82);
+            URL.revokeObjectURL(url);
+            resolve(out);
+          } catch (e) {
+            URL.revokeObjectURL(url);
+            reject(e);
+          }
+        };
+        img.onerror = (e) => {
+          URL.revokeObjectURL(url);
+          reject(e);
+        };
+        img.src = url;
+      });
+    }
+
+    async function consumeFiles(fileList) {
+      const images = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+      for (const f of images) {
+        const data = await fileToDataUrl(f);
+        pendingImages.push(data);
+      }
+      renderPreview();
+    }
+
+    document.getElementById("addNote").onclick = addNote;
+    document.getElementById("clearImages").onclick = () => {
+      pendingImages = [];
+      renderPreview();
+    };
+    exportJsonBtnEl.onclick = saveBackupFile;
+    importJsonBtnEl.onclick = loadBackupFile;
+    importJsonInputEl.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      await importStateFromFile(file);
+      importJsonInputEl.value = "";
+    });
+
+    async function handlePasteImages(e) {
+      const items = e.clipboardData?.items || [];
+      const files = [];
+      for (const i of items) {
+        if (i.type.startsWith("image/")) {
+          const f = i.getAsFile();
+          if (f) files.push(f);
+        }
+      }
+      if (files.length) {
+        e.preventDefault();
+        await consumeFiles(files);
+      }
+    }
+
+    noteTitleEl.addEventListener("paste", handlePasteImages);
+    noteDescriptionEl.addEventListener("paste", handlePasteImages);
+    noteColorEl.addEventListener("input", () => updatePresetSelection(noteColorPresetsEl, noteColorEl));
+    editNoteColorEl.addEventListener("input", () => updatePresetSelection(editNoteColorPresetsEl, editNoteColorEl));
+    resetNoteColorEl.onclick = () => {
+      noteColorEl.value = DEFAULT_NOTE_COLOR;
+      updatePresetSelection(noteColorPresetsEl, noteColorEl);
+    };
+    resetEditNoteColorEl.onclick = () => {
+      editNoteColorEl.value = DEFAULT_NOTE_COLOR;
+      updatePresetSelection(editNoteColorPresetsEl, editNoteColorEl);
+    };
+
+    dropzoneEl.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzoneEl.classList.add("dragover");
+    });
+    dropzoneEl.addEventListener("dragleave", () => dropzoneEl.classList.remove("dragover"));
+    dropzoneEl.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      dropzoneEl.classList.remove("dragover");
+      if (e.dataTransfer.files?.length) {
+        await consumeFiles(e.dataTransfer.files);
+      }
+    });
+
+    [todoListEl, doneListEl].forEach((listEl) => {
+      listEl.addEventListener("dragover", (e) => {
+        const payload = getDraggedNotePayload(e);
+        if (!payload) return;
+        e.preventDefault();
+        listEl.classList.add("dragover");
+      });
+
+      listEl.addEventListener("dragleave", () => {
+        listEl.classList.remove("dragover");
+      });
+
+      listEl.addEventListener("drop", (e) => {
+        const payload = getDraggedNotePayload(e);
+        if (!payload) return;
+        e.preventDefault();
+        listEl.classList.remove("dragover");
+        clearNoteDropMarkers();
+        const target = listEl === doneListEl ? "done" : "todo";
+        const targetList = state[activeTab][target];
+        moveNoteTo(payload.id, payload.from, target, targetList.length);
+      });
+    });
+
+    imageModalEl.addEventListener("click", closeImage);
+    document.getElementById("addImagesToNote").onclick = () => noteImageFileInputEl.click();
+    noteImageFileInputEl.addEventListener("change", async (e) => {
+      if (e.target.files?.length) {
+        await addImagesToEditing(e.target.files);
+      }
+      noteImageFileInputEl.value = "";
+    });
+    document.getElementById("cancelEditImages").onclick = closeEditImages;
+    document.getElementById("saveEditImages").onclick = saveEditImages;
+
+    editImagesModalEl.addEventListener("click", (e) => {
+      if (e.target === editImagesModalEl) closeEditImages();
+    });
+
+    editImagesDropzoneEl.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      editImagesDropzoneEl.classList.add("dragover");
+    });
+    editImagesDropzoneEl.addEventListener("dragleave", () => editImagesDropzoneEl.classList.remove("dragover"));
+    editImagesDropzoneEl.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      editImagesDropzoneEl.classList.remove("dragover");
+      if (e.dataTransfer.files?.length) {
+        await addImagesToEditing(e.dataTransfer.files);
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && editImagesModalEl.classList.contains("open")) {
+        closeEditImages();
+        return;
+      }
+      if (e.key === "Escape") closeImage();
+    });
+    document.addEventListener("paste", async (e) => {
+      if (!editImagesModalEl.classList.contains("open")) return;
+      const items = e.clipboardData?.items || [];
+      const files = [];
+      for (const i of items) {
+        if (i.type.startsWith("image/")) {
+          const f = i.getAsFile();
+          if (f) files.push(f);
+        }
+      }
+      if (files.length) {
+        e.preventDefault();
+        await addImagesToEditing(files);
+      }
+    });
+
+    renderColorPresets(noteColorPresetsEl, noteColorEl);
+    renderColorPresets(editNoteColorPresetsEl, editNoteColorEl);
+    updatePresetSelection(noteColorPresetsEl, noteColorEl);
+    updatePresetSelection(editNoteColorPresetsEl, editNoteColorEl);
+    if (countdownIntervalId) clearInterval(countdownIntervalId);
+    countdownIntervalId = setInterval(updateCountdowns, 1000);
+    renderTabs();
+    renderLists();
+  </script>
+</body>
+</html>
