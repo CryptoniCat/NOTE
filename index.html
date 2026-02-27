@@ -327,27 +327,6 @@
       font-size: 0.9rem;
     }
 
-    .important-row {
-      margin: -2px 0 10px;
-    }
-
-    .important-row label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--muted);
-      font-weight: 700;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-
-    .important-row input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #ffbf3f;
-      cursor: pointer;
-    }
-
     .composer input::placeholder,
     .composer textarea::placeholder { color: #8fa5c9; }
 
@@ -503,21 +482,6 @@
       border-color: #415166;
     }
 
-    .note.important-note {
-      border-color: #ffbf3f;
-      box-shadow: 0 0 0 2px rgba(255, 191, 63, 0.35), 0 8px 20px rgba(1, 5, 16, 0.32);
-    }
-
-    .focus-item.important-note {
-      border-color: #ffbf3f;
-      box-shadow: inset 0 0 0 2px rgba(255, 191, 63, 0.35);
-    }
-
-    .done-note.important-note {
-      opacity: 0.78;
-      border-color: #e6b44d;
-    }
-
     .note-title {
       margin: 0 0 6px;
       font-weight: 700;
@@ -544,9 +508,7 @@
       margin-bottom: 8px;
     }
 
-    .note-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .important-btn { background: #6d5a1e; color: #ffedc2; }
-    .important-btn.active { background: #b4881f; color: #1f1200; }
+    .note-actions { display: flex; gap: 8px; }
     .edit-img-btn { background: #2b4e7d; color: #dbe9ff; }
     .move-done { background: #1b5f3b; color: #d5ffea; }
     .move-todo { background: #24406c; color: #d9e8ff; }
@@ -716,12 +678,6 @@
             <label for="noteDeadline">Дедлайн</label>
             <input id="noteDeadline" type="datetime-local" />
           </div>
-          <div class="important-row">
-            <label for="noteImportant">
-              <input id="noteImportant" type="checkbox" />
-              Важлива нотатка
-            </label>
-          </div>
           <div class="toolbar">
             <div class="dropzone" id="dropzone">Скиньте сюди картинки або натисніть Ctrl+V після копіювання</div>
             <div class="actions">
@@ -763,12 +719,6 @@
       <div class="deadline-row">
         <label for="editNoteDeadline">Дедлайн</label>
         <input id="editNoteDeadline" type="datetime-local" />
-      </div>
-      <div class="important-row">
-        <label for="editNoteImportant">
-          <input id="editNoteImportant" type="checkbox" />
-          Важлива нотатка
-        </label>
       </div>
       <div class="edit-images-dropzone" id="editImagesDropzone">Перетягни сюди картинки або натисни Ctrl+V</div>
       <div class="edit-images-grid" id="editImagesGrid"></div>
@@ -821,7 +771,6 @@
     const noteColorPresetsEl = document.getElementById("noteColorPresets");
     const resetNoteColorEl = document.getElementById("resetNoteColor");
     const noteDeadlineEl = document.getElementById("noteDeadline");
-    const noteImportantEl = document.getElementById("noteImportant");
     const dropzoneEl = document.getElementById("dropzone");
     const previewEl = document.getElementById("preview");
     const imageModalEl = document.getElementById("imageModal");
@@ -836,7 +785,6 @@
     const editNoteColorPresetsEl = document.getElementById("editNoteColorPresets");
     const resetEditNoteColorEl = document.getElementById("resetEditNoteColor");
     const editNoteDeadlineEl = document.getElementById("editNoteDeadline");
-    const editNoteImportantEl = document.getElementById("editNoteImportant");
     let editingNoteRef = null;
     let editingImages = [];
     let isTabEditMode = false;
@@ -875,7 +823,6 @@
           : (typeof note.text === "string" ? note.text : ""),
         deadline: normalizeDeadline(note.deadline),
         color: normalizeColor(note.color),
-        important: Boolean(note.important),
         images: Array.isArray(note.images)
           ? note.images.filter((src) => typeof src === "string" && src.trim())
           : []
@@ -1407,7 +1354,6 @@
         const item = document.createElement("article");
         item.className = "focus-item";
         item.style.background = normalizeColor(note.color);
-        if (note.important) item.classList.add("important-note");
 
         const title = document.createElement("h3");
         title.className = "focus-title";
@@ -1525,7 +1471,6 @@
       editNoteTitleEl.value = "";
       editNoteDescriptionEl.value = "";
       editNoteDeadlineEl.value = "";
-      if (editNoteImportantEl) editNoteImportantEl.checked = false;
       if (editNoteColorEl) {
         editNoteColorEl.value = DEFAULT_NOTE_COLOR;
         updatePresetSelection(editNoteColorPresetsEl, editNoteColorEl);
@@ -1582,7 +1527,6 @@
       editNoteTitleEl.value = note.title ?? "";
       editNoteDescriptionEl.value = note.description ?? note.text ?? "";
       editNoteDeadlineEl.value = deadlineToInputValue(note.deadline);
-      if (editNoteImportantEl) editNoteImportantEl.checked = Boolean(note.important);
       if (editNoteColorEl) {
         editNoteColorEl.value = normalizeColor(note.color);
         updatePresetSelection(editNoteColorPresetsEl, editNoteColorEl);
@@ -1601,7 +1545,6 @@
         description: note.description ?? note.text ?? "",
         deadline: note.deadline ?? "",
         color: note.color,
-        important: Boolean(note.important),
         text: note.text,
         images: [...(note.images || [])]
       };
@@ -1609,7 +1552,6 @@
       note.description = editNoteDescriptionEl.value.trim();
       note.deadline = normalizeDeadline(editNoteDeadlineEl.value);
       note.color = normalizeColor(editNoteColorEl?.value);
-      note.important = Boolean(editNoteImportantEl?.checked);
       delete note.text;
       note.images = [...editingImages];
       if (!saveState()) {
@@ -1617,27 +1559,12 @@
         note.description = backup.description;
         note.deadline = backup.deadline;
         note.color = backup.color;
-        note.important = backup.important;
         if (backup.text !== undefined) note.text = backup.text;
         note.images = backup.images;
         return;
       }
       renderLists();
       closeEditImages();
-    }
-
-    function toggleImportant(id, from) {
-      ensureTabData(activeTab);
-      const list = state[activeTab][from];
-      const idx = list.findIndex((n) => n.id === id);
-      if (idx < 0) return;
-      const prev = Boolean(list[idx].important);
-      list[idx].important = !prev;
-      if (!saveState()) {
-        list[idx].important = prev;
-        return;
-      }
-      renderLists();
     }
 
     function getDraggedNotePayload(e) {
@@ -1804,7 +1731,6 @@
       card.className = "note";
       card.style.setProperty("--note-bg", normalizeColor(note.color));
       if (isDone) card.classList.add("done-note");
-      if (note.important) card.classList.add("important-note");
       card.draggable = true;
       card.dataset.id = note.id;
       card.dataset.from = isDone ? "done" : "todo";
@@ -1892,11 +1818,6 @@
       const actions = document.createElement("div");
       actions.className = "note-actions";
 
-      const importantBtn = document.createElement("button");
-      importantBtn.className = "important-btn" + (note.important ? " active" : "");
-      importantBtn.textContent = note.important ? "★ Важлива" : "☆ Важлива";
-      importantBtn.onclick = () => toggleImportant(note.id, isDone ? "done" : "todo");
-
       const move = document.createElement("button");
       move.className = isDone ? "move-todo" : "move-done";
       move.textContent = isDone ? "В To Do" : "В Done";
@@ -1912,7 +1833,7 @@
       editImagesBtn.textContent = "Редагувати";
       editImagesBtn.onclick = () => openEditImages(note.id, isDone ? "done" : "todo");
 
-      actions.append(importantBtn, move, editImagesBtn, del);
+      actions.append(move, editImagesBtn, del);
       card.appendChild(actions);
       return card;
     }
@@ -1958,7 +1879,6 @@
         description,
         deadline: normalizeDeadline(noteDeadlineEl.value),
         color: normalizeColor(noteColorEl?.value),
-        important: Boolean(noteImportantEl?.checked),
         images: [...pendingImages]
       });
       if (!saveState()) {
@@ -1968,7 +1888,6 @@
       noteTitleEl.value = "";
       noteDescriptionEl.value = "";
       noteDeadlineEl.value = "";
-      if (noteImportantEl) noteImportantEl.checked = false;
       if (noteColorEl) {
         noteColorEl.value = DEFAULT_NOTE_COLOR;
         updatePresetSelection(noteColorPresetsEl, noteColorEl);
