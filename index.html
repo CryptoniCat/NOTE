@@ -81,6 +81,17 @@
       font-weight: 800;
     }
 
+    .cloud-status {
+      align-self: center;
+      color: #9fb2d8;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .cloud-status[data-tone="ok"] { color: #b7ffd9; }
+    .cloud-status[data-tone="sync"] { color: #8fc2ff; }
+    .cloud-status[data-tone="error"] { color: #ffd6d6; }
+
     .timer-pane {
       border: 1px solid var(--line);
       border-radius: 14px;
@@ -649,6 +660,8 @@
           <div class="backup-actions">
             <button type="button" class="backup-btn" id="exportJsonBtn">SAVE</button>
             <button type="button" class="backup-btn" id="importJsonBtn">LOAD</button>
+            <button type="button" class="backup-btn" id="syncCloudBtn">SYNC NOW</button>
+            <span class="cloud-status" id="cloudStatus" data-tone="sync">Cloud: init...</span>
             <input type="file" id="importJsonInput" accept="application/json,.json" hidden />
           </div>
         </header>
@@ -732,6 +745,11 @@
     ];
 
     const KEY = "youtube-niche-notes-v1";
+    const SUPABASE_URL = "https://jcggvsmlkwvuiissqxbh.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_JcWQPSNpI4jFnReVmw5RqQ_SK-uVeh0";
+    const CLOUD_TABLE = "notes_state";
+    const CLOUD_RECORD_ID = "promopass1990@";
+    const CLOUD_SYNC_ENABLED = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
     const loadedState = loadState();
     let tabs = loadedState.tabs;
     let state = loadedState.data;
@@ -741,6 +759,8 @@
     const tabsEl = document.getElementById("tabs");
     const exportJsonBtnEl = document.getElementById("exportJsonBtn");
     const importJsonBtnEl = document.getElementById("importJsonBtn");
+    const syncCloudBtnEl = document.getElementById("syncCloudBtn");
+    const cloudStatusEl = document.getElementById("cloudStatus");
     const importJsonInputEl = document.getElementById("importJsonInput");
     const todoListEl = document.getElementById("todoList");
     const doneListEl = document.getElementById("doneList");
@@ -771,6 +791,9 @@
     let countdownIntervalId = null;
     let currentDraggedNote = null;
     let currentDraggedTab = null;
+    let cloudInitDone = false;
+    let cloudSaveTimerId = null;
+    let cloudErrorShown = false;
     const DEFAULT_NOTE_COLOR = "#13284a";
     const DARK_PRESET_COLORS = [
       "#13284a",
@@ -818,6 +841,88 @@
 
     function ensureTabData(tabName) {
       if (!state[tabName]) state[tabName] = createEmptyBucket();
+    }
+
+    function setCloudStatus(text, tone = "sync") {
+      if (!cloudStatusEl) return;
+      cloudStatusEl.textContent = text;
+      cloudStatusEl.dataset.tone = tone;
+    }
+
+    function hasAnyNotes(dataObj) {
+      return Object.values(dataObj || {}).some((bucket) => {
+        const todoCount = Array.isArray(bucket?.todo) ? bucket.todo.length : 0;
+        const doneCount = Array.isArray(bucket?.done) ? bucket.done.length : 0;
+        return todoCount + doneCount > 0;
+      });
+    }
+
+    async function supabaseRequest(path, options = {}) {
+      const headers = {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        ...options.headers
+      };
+      const response = await fetch(`${SUPABASE_URL}${path}`, { ...options, headers });
+      const raw = await response.text();
+      let payload = null;
+      try {
+        payload = raw ? JSON.parse(raw) : null;
+      } catch {
+        payload = raw || null;
+      }
+      if (!response.ok) {
+        const message = typeof payload === "string"
+          ? payload
+          : (payload?.message || payload?.error_description || payload?.hint || `HTTP ${response.status}`);
+        throw new Error(message);
+      }
+      return payload;
+    }
+
+    async function loadCloudPayload() {
+      const id = encodeURIComponent(CLOUD_RECORD_ID);
+      const path = `/rest/v1/${CLOUD_TABLE}?select=id,state,updated_at&id=eq.${id}&limit=1`;
+      const rows = await supabaseRequest(path, { method: "GET", headers: { Accept: "application/json" } });
+      if (!Array.isArray(rows) || !rows.length) return null;
+      return rows[0]?.state || null;
+    }
+
+    async function saveCloudPayload(payload) {
+      const path = `/rest/v1/${CLOUD_TABLE}`;
+      const body = [{
+        id: CLOUD_RECORD_ID,
+        state: payload,
+        updated_at: new Date().toISOString()
+      }];
+      await supabaseRequest(path, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        },
+        body: JSON.stringify(body)
+      });
+    }
+
+    function queueCloudSave() {
+      if (!CLOUD_SYNC_ENABLED || !cloudInitDone) return;
+      if (cloudSaveTimerId) clearTimeout(cloudSaveTimerId);
+      cloudSaveTimerId = setTimeout(async () => {
+        setCloudStatus("Cloud: syncing...", "sync");
+        try {
+          await saveCloudPayload(buildBackupPayload());
+          setCloudStatus("Cloud: synced", "ok");
+          cloudErrorShown = false;
+        } catch (err) {
+          console.error("cloud save failed:", err);
+          setCloudStatus("Cloud: error", "error");
+          if (!cloudErrorShown) {
+            cloudErrorShown = true;
+            alert("Cloud sync помилка. Перевір таблицю/політики Supabase.");
+          }
+        }
+      }, 900);
     }
 
     function loadState() {
@@ -868,11 +973,12 @@
       }
     }
 
-    function saveState() {
+    function saveState(options = {}) {
       if (!tabs.length) tabs = ["Нова вкладка"];
       if (!tabs.includes(activeTab)) activeTab = tabs[0];
       try {
         localStorage.setItem(KEY, JSON.stringify({ tabs, data: state, activeTab }));
+        if (!options.skipCloud) queueCloudSave();
         return true;
       } catch (err) {
         alert("Не вдалося зберегти. Картинки завеликі для локального сховища. Спробуйте менші зображення.");
@@ -889,6 +995,58 @@
         activeTab,
         data: state
       };
+    }
+
+    async function syncCloudNow() {
+      if (!CLOUD_SYNC_ENABLED) {
+        alert("Cloud sync не налаштований.");
+        return;
+      }
+      setCloudStatus("Cloud: syncing...", "sync");
+      try {
+        await saveCloudPayload(buildBackupPayload());
+        setCloudStatus("Cloud: synced", "ok");
+        cloudErrorShown = false;
+      } catch (err) {
+        console.error("syncCloudNow failed:", err);
+        setCloudStatus("Cloud: error", "error");
+        alert(`Cloud sync помилка: ${err?.message || "невідома помилка"}`);
+      }
+    }
+
+    async function initCloudSync() {
+      if (!CLOUD_SYNC_ENABLED) {
+        setCloudStatus("Cloud: off", "error");
+        return;
+      }
+      setCloudStatus("Cloud: connecting...", "sync");
+      try {
+        const remotePayload = await loadCloudPayload();
+        const localHasData = hasAnyNotes(state);
+        if (remotePayload) {
+          const sanitized = sanitizeImportedState(remotePayload);
+          if (sanitized) {
+            const remoteHasData = hasAnyNotes(sanitized.data);
+            if (!localHasData || remoteHasData) {
+              tabs = sanitized.tabs;
+              state = sanitized.data;
+              activeTab = sanitized.activeTab;
+              saveState({ skipCloud: true });
+              renderTabs();
+              renderLists();
+            }
+          }
+          setCloudStatus("Cloud: synced", "ok");
+        } else {
+          await saveCloudPayload(buildBackupPayload());
+          setCloudStatus("Cloud: initialized", "ok");
+        }
+      } catch (err) {
+        console.error("initCloudSync failed:", err);
+        setCloudStatus("Cloud: setup needed", "error");
+      } finally {
+        cloudInitDone = true;
+      }
     }
 
     function buildBackupFileName() {
@@ -1711,6 +1869,7 @@
     };
     exportJsonBtnEl.onclick = saveBackupFile;
     importJsonBtnEl.onclick = loadBackupFile;
+    syncCloudBtnEl.onclick = syncCloudNow;
     importJsonInputEl.addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
       await importStateFromFile(file);
@@ -1841,6 +2000,8 @@
     countdownIntervalId = setInterval(updateCountdowns, 1000);
     renderTabs();
     renderLists();
+    initCloudSync();
+    window.addEventListener("online", () => queueCloudSave());
   </script>
 </body>
 </html>
