@@ -813,10 +813,29 @@
       return { todo: [], done: [] };
     }
 
-    function normalizeBucket(bucket) {
+    function sanitizeNote(note) {
+      if (!note || typeof note !== "object") return null;
       return {
-        todo: Array.isArray(bucket?.todo) ? bucket.todo : [],
-        done: Array.isArray(bucket?.done) ? bucket.done : []
+        id: typeof note.id === "string" && note.id.trim() ? note.id.trim() : uid(),
+        title: typeof note.title === "string" ? note.title : "",
+        description: typeof note.description === "string"
+          ? note.description
+          : (typeof note.text === "string" ? note.text : ""),
+        deadline: normalizeDeadline(note.deadline),
+        color: normalizeColor(note.color),
+        images: Array.isArray(note.images)
+          ? note.images.filter((src) => typeof src === "string" && src.trim())
+          : []
+      };
+    }
+
+    function normalizeBucket(bucket) {
+      const normalizeList = (list) => Array.isArray(list)
+        ? list.map((note) => sanitizeNote(note)).filter(Boolean)
+        : [];
+      return {
+        todo: normalizeList(bucket?.todo),
+        done: normalizeList(bucket?.done)
       };
     }
 
@@ -1128,10 +1147,18 @@
         alert("Невірний формат бекапу.");
         return;
       }
+      const prevTabs = tabs;
+      const prevState = state;
+      const prevActiveTab = activeTab;
       tabs = sanitized.tabs;
       state = sanitized.data;
       activeTab = sanitized.activeTab;
-      if (!saveState()) return;
+      if (!saveState()) {
+        tabs = prevTabs;
+        state = prevState;
+        activeTab = prevActiveTab;
+        return;
+      }
       renderTabs();
       renderLists();
       alert("Імпорт завершено.");
@@ -1164,10 +1191,19 @@
         alert("Така вкладка вже існує.");
         return;
       }
+      const prevTabs = [...tabs];
+      const prevActiveTab = activeTab;
+      const prevBucket = state[clean];
       tabs.push(clean);
       ensureTabData(clean);
       activeTab = clean;
-      saveState();
+      if (!saveState()) {
+        tabs = prevTabs;
+        activeTab = prevActiveTab;
+        if (prevBucket === undefined) delete state[clean];
+        else state[clean] = prevBucket;
+        return;
+      }
       renderTabs();
       renderLists();
     }
@@ -1183,11 +1219,23 @@
       }
       const idx = tabs.indexOf(oldName);
       if (idx < 0) return;
+      const prevTabs = [...tabs];
+      const prevActiveTab = activeTab;
+      const prevOldBucket = state[oldName];
+      const prevNewBucket = state[clean];
       tabs[idx] = clean;
       state[clean] = state[oldName] || createEmptyBucket();
       delete state[oldName];
       if (activeTab === oldName) activeTab = clean;
-      saveState();
+      if (!saveState()) {
+        tabs = prevTabs;
+        activeTab = prevActiveTab;
+        if (prevOldBucket === undefined) delete state[oldName];
+        else state[oldName] = prevOldBucket;
+        if (prevNewBucket === undefined) delete state[clean];
+        else state[clean] = prevNewBucket;
+        return;
+      }
       renderTabs();
       renderLists();
     }
@@ -1198,10 +1246,19 @@
         return;
       }
       if (!confirm(`Видалити вкладку "${tabName}" разом з її нотатками?`)) return;
+      const prevTabs = [...tabs];
+      const prevActiveTab = activeTab;
+      const deletedBucket = state[tabName];
       tabs = tabs.filter((t) => t !== tabName);
       delete state[tabName];
       if (activeTab === tabName) activeTab = tabs[0];
-      saveState();
+      if (!saveState()) {
+        tabs = prevTabs;
+        activeTab = prevActiveTab;
+        if (deletedBucket === undefined) delete state[tabName];
+        else state[tabName] = deletedBucket;
+        return;
+      }
       renderTabs();
       renderLists();
     }
@@ -1288,7 +1345,7 @@
       if (!rows.length) {
         const empty = document.createElement("div");
         empty.className = "focus-meta";
-        empty.textContent = "Немає задач з дедлайном у цій вкладці.";
+        empty.textContent = "Немає задач з дедлайном у всіх вкладках.";
         deadlineFocusListEl.appendChild(empty);
         return;
       }
@@ -1444,9 +1501,18 @@
 
     async function addImagesToEditing(fileList) {
       const images = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+      let failed = 0;
       for (const f of images) {
-        const data = await fileToDataUrl(f);
-        editingImages.push(data);
+        try {
+          const data = await fileToDataUrl(f);
+          editingImages.push(data);
+        } catch (err) {
+          failed += 1;
+          console.error("addImagesToEditing failed:", err);
+        }
+      }
+      if (failed) {
+        alert(`Не вдалося обробити ${failed} файл(и).`);
       }
       renderEditImages();
     }
@@ -1527,18 +1593,26 @@
       const toList = data[to];
       const fromIdx = fromList.findIndex((n) => n.id === id);
       if (fromIdx < 0) return;
+      const fromSnapshot = [...fromList];
+      const toSnapshot = from === to ? fromSnapshot : [...toList];
 
       const [item] = fromList.splice(fromIdx, 1);
+      let itemToInsert = item;
       if (to === "done" && item.deadline) {
         const closeTimer = confirm("Закрити таймер?");
         if (closeTimer) {
-          item.deadline = "";
+          itemToInsert = { ...item, deadline: "" };
         }
       }
       let index = Math.max(0, Math.min(targetIndex, toList.length));
       if (from === to && index > fromIdx) index -= 1;
-      toList.splice(index, 0, item);
-      if (saveState()) renderLists();
+      toList.splice(index, 0, itemToInsert);
+      if (!saveState()) {
+        data[from] = [...fromSnapshot];
+        if (from !== to) data[to] = [...toSnapshot];
+        return;
+      }
+      renderLists();
     }
 
     function moveTabTo(sourceTab, targetTab, placeAfter) {
@@ -1546,12 +1620,17 @@
       const fromIdx = tabs.indexOf(sourceTab);
       const targetIdx = tabs.indexOf(targetTab);
       if (fromIdx < 0 || targetIdx < 0) return;
+      const prevTabs = [...tabs];
       tabs.splice(fromIdx, 1);
       let insertIdx = targetIdx;
       if (fromIdx < targetIdx) insertIdx -= 1;
       if (placeAfter) insertIdx += 1;
       tabs.splice(insertIdx, 0, sourceTab);
-      if (saveState()) renderTabs();
+      if (!saveState()) {
+        tabs = prevTabs;
+        return;
+      }
+      renderTabs();
     }
 
     function getDraggedTabPayload(e) {
@@ -1781,8 +1860,11 @@
       const data = state[activeTab];
       const idx = data[from].findIndex((n) => n.id === id);
       if (idx < 0) return;
-      data[from].splice(idx, 1);
-      saveState();
+      const [removed] = data[from].splice(idx, 1);
+      if (!saveState()) {
+        data[from].splice(idx, 0, removed);
+        return;
+      }
       renderLists();
     }
 
@@ -1855,9 +1937,18 @@
 
     async function consumeFiles(fileList) {
       const images = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+      let failed = 0;
       for (const f of images) {
-        const data = await fileToDataUrl(f);
-        pendingImages.push(data);
+        try {
+          const data = await fileToDataUrl(f);
+          pendingImages.push(data);
+        } catch (err) {
+          failed += 1;
+          console.error("consumeFiles failed:", err);
+        }
+      }
+      if (failed) {
+        alert(`Не вдалося обробити ${failed} файл(и).`);
       }
       renderPreview();
     }
